@@ -1,0 +1,39 @@
+/* Mapbox GL CSS */
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+/* Global reset and base styles */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  color: #e8e6e3;
+  background: #1b1a18;
+}
+
+/* Hide Mapbox attribution text but keep logo */
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
+/* Hide compass control */
+.mapboxgl-ctrl-compass {
+  display: none !important;
+}
+
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
