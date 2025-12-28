@@ -561,7 +561,7 @@ export default function WildfirePage() {
                   Interactions on the map and histograms update each other in real time.
                 </p>
                 <p style={{ marginBottom: 12 }}>
-                  The app is built using DeckGL, Mosaic, DuckDB-WASM and GeoArrow for all analytical queries.
+                  The app is built using Deck.gl (custom flame icons), Mosaic, and DuckDB-WASM for all analytical queries.
                   All filtering happens locally in the browser with no backend involved.
                 </p>
                 <p style={{ fontSize: 12, color: '#9ca3af' }}>

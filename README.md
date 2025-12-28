@@ -1,23 +1,24 @@
 # Wildfire History Explorer
 
-Interactive visualization of historical wildfire perimeters using DuckDB-WASM, Mosaic, and GeoArrow. All data processing happens entirely in the browser with no backend required.
+Interactive visualization of historical wildfire data using DuckDB-WASM and Mosaic with custom flame icon symbology. All data processing happens entirely in the browser with no backend required.
 
 ## Features
 
-- **Interactive Map**: Visualize wildfire locations across the United States
+- **Interactive Map**: Visualize wildfire locations with custom flame icon symbology
+- **Graduated Symbols**: Fire icons sized by acres (10 classification tiers)
+- **Color-Coded by Cause**: Natural (green), Human (red), Undetermined (gray)
 - **Linked Charts**: Seasonal patterns, temporal frequency, and cause distribution
 - **Brush Mode**: Spatial filtering with real-time updates between map and charts
 - **Browser-Only**: All queries run locally using DuckDB-WASM
-- **GeoArrow**: Efficient geospatial data format for fast rendering
 
 ## Architecture
 
 - **Next.js 15** - React framework
-- **DuckDB-WASM** - In-browser SQL database with spatial extensions
-- **GeoArrow** - Efficient geospatial data format
-- **Deck.gl** - WebGL-powered visualization framework
+- **DuckDB-WASM** - In-browser SQL database with spatial extensions (WKB parsing)
+- **Deck.gl IconLayer** - WebGL-powered visualization with custom flame icons
 - **Mosaic** - Coordinated multi-view framework for linked charts
 - **Apache Arrow** - Columnar data format
+- **Parquet** - Efficient binary data format (6 MB dataset)
 
 ## Setup
 
@@ -101,7 +102,7 @@ Make sure to set `NEXT_PUBLIC_MAPBOX_TOKEN` in your Netlify site settings:
 - Next.js 15
 - React 19
 - DuckDB-WASM 1.30.0
-- @geoarrow/deck.gl-layers 0.1.0
+- Deck.gl 9.1.3 (IconLayer for custom flame symbology)
 - @uwdata/mosaic-plot 0.21.1
 - Apache Arrow 21.1.0
 - Mapbox GL JS 3.17.0

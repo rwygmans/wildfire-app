@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Wildfire History Explorer',
-  description: 'Interactive wildfire visualization with DuckDB-WASM, Mosaic, and GeoArrow',
+  description: 'Interactive wildfire visualization with DuckDB-WASM, Mosaic, and custom flame icon symbology',
 };
 
 export default function RootLayout({
