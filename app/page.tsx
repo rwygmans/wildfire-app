@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { DeckGL } from '@deck.gl/react';
-import { ScatterplotLayer } from '@deck.gl/layers';
+import { IconLayer } from '@deck.gl/layers';
 import { Map } from 'react-map-gl/mapbox';
 import { Eye, Paintbrush, Info } from 'lucide-react';
 import {
@@ -21,6 +21,32 @@ import { BASE_QUERY, PARQUET_URL, TABLE_NAME, MOSAIC_TABLE_QUERY } from './lib/c
 
 const INITIAL_VIEW_STATE = INITIAL_VIEW_STATE_US;
 
+// Icon mapping for the flame icon atlas
+const ICON_MAPPING = {
+  flame: { x: 0, y: 0, width: 100, height: 100, mask: true }
+};
+
+// Convert SVG to PNG data URL for deck.gl IconLayer
+function createFlameIconUrl(): Promise<string> {
+  return new Promise((resolve) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+      <path fill="#FFFFFF" transform="translate(3, 0) scale(3.125)" d="M22.905,6.953 C18.52,8.203 17.717,11.748 18,14 C14.872,10.322 15,6.093 15,0 C4.968,3.783 7.301,14.688 7,18 C4.477,15.935 4,11 4,11 C1.336,12.371 0,16.031 0,19 C0,26.18 5.82,32 13,32 C20.18,32 26,26.18 26,19 C26,14.733 22.867,12.765 22.905,6.953"/>
+    </svg>`;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const ctx = canvas.getContext('2d');
+    
+    const img = new Image();
+    img.onload = () => {
+      ctx?.drawImage(img, 0, 0, 100, 100);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(svg);
+  });
+}
+
 export default function WildfirePage() {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [data, setData] = useState<WildfireData | null>(null);
@@ -30,6 +56,7 @@ export default function WildfirePage() {
   const [syncBrush, setSyncBrush] = useState(true);
   const [brushRadius, setBrushRadius] = useState(50000);
   const [showInfo, setShowInfo] = useState(false);
+  const [flameIconUrl, setFlameIconUrl] = useState<string | null>(null);
   
   // Crossfilter selection for linked views (brush interactions)
   const crossfilterRef = useRef<Selection | null>(null);
@@ -43,6 +70,11 @@ export default function WildfirePage() {
   if (!crossfilterRef.current) {
     crossfilterRef.current = Selection.crossfilter();
   }
+
+  // Load flame icon on mount
+  useEffect(() => {
+    createFlameIconUrl().then(setFlameIconUrl);
+  }, []);
 
   // Load all map data
   const loadAllData = useCallback(async () => {
@@ -175,44 +207,55 @@ export default function WildfirePage() {
 
 
 
-  // Create ScatterplotLayer with binary data
+  // Create IconLayer with flame icons
   const layer = useMemo(() => {
-    if (!data) return null;
+    if (!data || !flameIconUrl) return null;
 
-    const colors = new Uint8Array(data.length * 4);
-    const radii = new Float32Array(data.length);
-
+    // Build array of fire objects for IconLayer
+    const fires = [];
     for (let i = 0; i < data.length; i++) {
-      const cause = data.causes[i];
-      const acres = data.acres[i];
-      const color = getCauseColor(cause);
-      
-      colors[i * 4] = color[0];
-      colors[i * 4 + 1] = color[1];
-      colors[i * 4 + 2] = color[2];
-      colors[i * 4 + 3] = color[3];
-      radii[i] = Math.sqrt(Math.max(acres, 5)) * 0.1;
+      const lon = data.positions[i * 2];
+      const lat = data.positions[i * 2 + 1];
+      fires.push({
+        position: [lon, lat],
+        cause: data.causes[i],
+        acres: data.acres[i],
+        index: i,
+      });
     }
 
-    return new ScatterplotLayer({
+    return new IconLayer({
       id: 'wildfires',
-      data: {
-        length: data.length,
-        attributes: {
-          getPosition: { value: data.positions, size: 2 },
-          getFillColor: { value: colors, size: 4 },
-          getRadius: { value: radii, size: 1 },
-        },
+      data: fires,
+      iconAtlas: flameIconUrl,
+      iconMapping: ICON_MAPPING,
+      getIcon: () => 'flame',
+      getPosition: (d: any) => d.position,
+      // Graduated symbol sizes based on fire size classes
+      getSize: (d: any) => {
+        const acres = d.acres;
+        if (acres < 100) return 5;            // Very small
+        if (acres < 500) return 8;            // Small  
+        if (acres < 2500) return 12;          // Medium
+        if (acres < 10000) return 18;         // Large
+        if (acres < 50000) return 26;         // Very large
+        if (acres < 100000) return 34;        // Major
+        if (acres < 250000) return 42;        // Extreme
+        if (acres < 500000) return 48;        // Historic
+        if (acres < 1000000) return 52;       // Catastrophic
+        return 55;                            // Mega fires (1M+ acres)
       },
-      radiusScale: Math.pow(2, Math.max(14 - viewState.zoom, 0)),
-      radiusMinPixels: 1,
-      radiusMaxPixels: 20,
+      getColor: (d: any) => getCauseColor(d.cause),
+      sizeScale: 1,
+      sizeUnits: 'pixels',
+      sizeMinPixels: 5,
+      sizeMaxPixels: 55,
       pickable: !isBrushMode,
-      stroked: true,
-      getLineColor: [140, 140, 140, 90],
-      lineWidthMinPixels: 1,
+      billboard: true,
+      autoHighlight: true,
+      highlightColor: [255, 255, 0, 200], // Yellow highlight on hover
     });
-  }, [data, isBrushMode, viewState.zoom]);
+  }, [data, isBrushMode, viewState.zoom, flameIconUrl]);
 
   // Handle map hover for brushing
   const handleHover = useCallback(async (info: any) => {
@@ -244,11 +287,11 @@ export default function WildfirePage() {
     // Only show tooltip in View mode, not Brush mode
     if (isBrushMode) return null;
     
-    // With binary attributes, check for valid index
-    const index = info.index;
-    if (index === undefined || index === null || index < 0) return null;
-    if (!data || index >= data.length) return null;
+    // IconLayer uses object property
+    const obj = info.object;
+    if (!obj || !data) return null;
     
+    const index = obj.index;
     const acres = data.acres[index];
     const time = data.times[index];
     const cause = data.causes[index];
