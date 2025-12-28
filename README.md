@@ -50,7 +50,9 @@ npm run dev
 
 ## Data
 
-The dataset includes US wildfires with `Acres > 5`, sourced from USGS/NIFC Wildfire Perimeters. The data is pre-filtered and optimized in `wildfires-lite.parquet` (6 MB vs 145 MB full dataset).
+This dataset represents the Fire Occurrence Data Record (FODR) produced by the Interagency Fire Occurrence Reporting Modules (InFORM) Application. The FODR is the authoritative fire occurrence data set for the five major federal fire management agencies and some state agencies. The FODR also includes records that are bulk uploaded by state agencies that are not InFORM participators, thus providing a comprehensive fire occurrence data set for the United States.
+
+The dataset includes US wildfires with `Acres > 5`. The data is pre-filtered and optimized in `wildfires-lite.parquet` (6 MB vs 145 MB full dataset).
 
 ### Data Columns
 
